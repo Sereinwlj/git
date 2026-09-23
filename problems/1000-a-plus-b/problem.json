@@ -1,0 +1,9 @@
+{
+  "id": "1000",
+  "title": "A + B Problem",
+  "description": "【题目描述】\n给定两个整数 a 和 b，输出它们的和。\n\n【输入格式】\n一行，两个整数 a 和 b（-10^9 <= a, b <= 10^9），用空格分隔。\n\n【输出格式】\n一行，一个整数，表示 a + b 的值。\n\n【样例输入】\n1 2\n\n【样例输出】\n3\n\n【提示】\n注意数值范围：a + b 的结果可能超出 32 位有符号整数的表示范围，\n所以 C++ 里请用 long long 而不是 int。\n\n【本题的判题方式】\n精确比对（exact）：逐行比较，忽略每行行尾的多余空格和末尾空行，\n但行内空格必须严格一致。",
+  "time_limit_ms": 1000,
+  "memory_limit_mb": 256,
+  "output_limit_kb": 1024,
+  "checker": { "type": "exact" }
+}

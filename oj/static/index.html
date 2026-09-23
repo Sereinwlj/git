@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mini OJ · 迷你在线判题机</title>
+<style>
+  :root {
+    --bg: #f6f5f1;
+    --card: #ffffff;
+    --line: #e3e1da;
+    --text: #24231f;
+    --muted: #6f6d66;
+    --accent: #0f6e56;
+    --accent-soft: #e1f5ee;
+    --warn: #a32d2d;
+    --warn-soft: #fcebeb;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    font-size: 14px; line-height: 1.6;
+  }
+  header {
+    padding: 18px 24px; border-bottom: 1px solid var(--line); background: var(--card);
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  header h1 { font-size: 16px; font-weight: 500; margin: 0; }
+  header span { font-size: 12px; color: var(--muted); }
+  .layout {
+    display: grid; grid-template-columns: 260px minmax(0, 1fr);
+    gap: 20px; padding: 20px 24px; align-items: start;
+  }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 16px 18px;
+  }
+  .card + .card { margin-top: 16px; }
+  h2 { font-size: 14px; font-weight: 500; margin: 0 0 12px; }
+  .plist { list-style: none; margin: 0; padding: 0; }
+  .plist li {
+    padding: 9px 10px; border-radius: 8px; cursor: pointer;
+    display: flex; justify-content: space-between; gap: 8px; align-items: center;
+  }
+  .plist li:hover { background: #f3f2ee; }
+  .plist li.active { background: var(--accent-soft); }
+  .plist .pid { font-size: 12px; color: var(--muted); }
+  .desc {
+    white-space: pre-wrap; background: #faf9f6; border: 1px solid var(--line);
+    border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #3d3b35;
+    margin-bottom: 14px; max-height: 240px; overflow: auto;
+  }
+  .meta { display: flex; gap: 16px; font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  textarea {
+    width: 100%; min-height: 300px; margin-top: 12px;
+    font-family: ui-monospace, Consolas, "Courier New", monospace;
+    font-size: 13px; line-height: 1.55; padding: 12px 14px;
+    border: 1px solid var(--line); border-radius: 8px;
+    background: #fcfcfa; color: var(--text); resize: vertical;
+  }
+  button {
+    font: inherit; padding: 7px 18px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--accent); background: var(--accent); color: #fff;
+  }
+  button:disabled { opacity: .5; cursor: default; }
+  button.ghost { background: transparent; color: var(--text); border-color: var(--line); }
+  select {
+    font: inherit; padding: 6px 10px; border-radius: 8px;
+    border: 1px solid var(--line); background: #fff; color: var(--text);
+  }
+  .verdict {
+    border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px;
+    border: 1px solid var(--line); background: #fff;
+  }
+  .verdict.ok { background: var(--accent-soft); border-color: #9fe1cb; }
+  .verdict.bad { background: var(--warn-soft); border-color: #f7c1c1; }
+  .verdict .big { font-size: 15px; font-weight: 500; margin: 0 0 4px; }
+  .verdict.ok .big { color: var(--accent); }
+  .verdict.bad .big { color: var(--warn); }
+  .verdict .msg { font-size: 13px; color: #3d3b35; white-space: pre-wrap; word-break: break-word; }
+  pre.err {
+    background: #2c2c2a; color: #e8e6e0; padding: 12px 14px; border-radius: 8px;
+    overflow: auto; font-size: 12px; max-height: 260px; margin: 8px 0 0;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid #efede7; }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; }
+  .tag { font-size: 12px; padding: 1px 8px; border-radius: 999px; }
+  .tag.ok { background: var(--accent-soft); color: var(--accent); }
+  .tag.bad { background: var(--warn-soft); color: var(--warn); }
+  .tag.wait { background: #f1efe8; color: #5f5e5a; }
+  .hint { font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Mini OJ</h1>
+  <span>迷你在线判题机 · 纯 Python 标准库实现</span>
+</header>
+
+<div class="layout">
+
+  <div>
+    <div class="card">
+      <h2>题目列表</h2>
+      <ul class="plist" id="problems"></ul>
+    </div>
+    <div class="card">
+      <h2>提交记录</h2>
+      <table id="subList"><tbody></tbody></table>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <h2 id="pTitle">请选择一道题目</h2>
+      <div class="meta" id="pMeta"></div>
+      <div class="desc" id="pDesc"></div>
+
+      <div class="row">
+        <select id="lang"></select>
+        <button id="btnSubmit">提交判题</button>
+        <button class="ghost" id="btnSample">填入示例代码</button>
+        <span class="hint" id="submitHint"></span>
+      </div>
+
+      <textarea id="code" spellcheck="false"></textarea>
+    </div>
+
+    <div class="card">
+      <h2>判题结果</h2>
+      <div id="verdict" class="hint">还没有提交。</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const state = { problems: [], current: null, polling: null, languages: [] };
+
+async function api(path, options) {
+  const res = await fetch(path, options);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || ('请求失败 ' + res.status));
+  return data;
+}
+
+async function loadLanguages() {
+  state.languages = await api('/api/languages');
+  const sel = document.getElementById('lang');
+  sel.innerHTML = state.languages
+    .map(l => `<option value="${l.id}">${l.display}</option>`).join('');
+}
+
+async function loadProblems() {
+  state.problems = await api('/api/problems');
+  const ul = document.getElementById('problems');
+  ul.innerHTML = state.problems.map(p =>
+    `<li data-id="${p.id}">
+       <span>${escapeHtml(p.title)}</span>
+       <span class="pid">${p.id}</span>
+     </li>`).join('');
+  ul.querySelectorAll('li').forEach(li => {
+    li.onclick = () => selectProblem(li.dataset.id);
+  });
+  if (state.problems.length) selectProblem(state.problems[0].id);
+}
+
+async function selectProblem(id) {
+  state.current = await api('/api/problems/' + id);
+  document.querySelectorAll('.plist li').forEach(li =>
+    li.classList.toggle('active', li.dataset.id === id));
+  document.getElementById('pTitle').textContent = state.current.title;
+  document.getElementById('pMeta').innerHTML =
+    `<span>题目编号 ${state.current.id}</span>
+     <span>时间限制 ${state.current.time_limit_ms} ms</span>
+     <span>内存限制 ${state.current.memory_limit_mb} MB</span>`;
+  document.getElementById('pDesc').textContent = state.current.description || '（无题面）';
+  loadSubmissions();
+}
+
+async function loadSubmissions() {
+  const tbody = document.querySelector('#subList tbody');
+  if (!state.current) { tbody.innerHTML = ''; return; }
+  const list = await api('/api/submissions?problem_id=' + state.current.id + '&limit=10');
+  tbody.innerHTML = list.length ? list.map(s =>
+    `<tr>
+       <td>#${s.id}</td>
+       <td>${verdictTag(s.status)}</td>
+       <td>${s.time_ms} ms</td>
+     </tr>`).join('') : '<tr><td colspan="3" class="hint">暂无记录</td></tr>';
+}
+
+function verdictTag(status) {
+  const ok = status === 'Accepted';
+  const wait = (status === 'Pending' || status === 'Judging');
+  const cls = ok ? 'ok' : (wait ? 'wait' : 'bad');
+  return `<span class="tag ${cls}">${labelOf(status)}</span>`;
+}
+
+const LABELS = {
+  Pending: '等待判题', Judging: '判题中', Accepted: '通过',
+  WrongAnswer: '答案错误', TimeLimitExceeded: '超时',
+  MemoryLimitExceeded: '超内存', OutputLimitExceeded: '输出超限',
+  RuntimeError: '运行错误', CompileError: '编译错误', SystemError: '评测机异常'
+};
+const labelOf = s => LABELS[s] || s;
+
+async function submit() {
+  if (!state.current) return;
+  const btn = document.getElementById('btnSubmit');
+  const code = document.getElementById('code').value;
+  if (!code.trim()) { setHint('代码不能为空'); return; }
+
+  btn.disabled = true;
+  setHint('提交中…');
+  try {
+    const res = await api('/api/submissions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        problem_id: state.current.id,
+        language: document.getElementById('lang').value,
+        source_code: code
+      })
+    });
+    setHint('已提交 #' + res.id);
+    poll(res.id);
+  } catch (err) {
+    setHint(err.message);
+    btn.disabled = false;
+  }
+}
+
+// 轮询判题结果。终态出现就停 —— 这就是 is_final 字段存在的意义，
+// 前端不用自己去记"哪些状态算结束了"。
+function poll(id) {
+  clearInterval(state.polling);
+  const tick = async () => {
+    let s;
+    try { s = await api('/api/submissions/' + id); }
+    catch (e) { clearInterval(state.polling); return; }
+    renderVerdict(s);
+    if (s.is_final) {
+      clearInterval(state.polling);
+      document.getElementById('btnSubmit').disabled = false;
+      setHint('');
+      loadSubmissions();
+    }
+  };
+  tick();
+  state.polling = setInterval(tick, 500);
+}
+
+function renderVerdict(s) {
+  const box = document.getElementById('verdict');
+  const isOk = s.status === 'Accepted';
+  const isBad = s.is_final && !isOk;
+  box.className = 'verdict' + (isOk ? ' ok' : (isBad ? ' bad' : ''));
+  box.innerHTML = `
+    <p class="big">#${s.id} · ${s.status_label}</p>
+    <p class="msg">${escapeHtml(s.message || '')}</p>
+    <p class="hint">耗时 ${s.time_ms} ms${s.memory_kb ? ' · 内存 ' + s.memory_kb + ' KB' : ''}</p>
+    ${s.status === 'CompileError' ? `<pre class="err">${escapeHtml(s.message || '')}</pre>` : ''}
+    ${s.cases && s.cases.length ? `
+      <table style="margin-top:8px"><thead><tr><th>测试点</th><th>结果</th><th>耗时</th></tr></thead>
+      <tbody>${s.cases.map(c => `<tr><td>#${c.index}</td>
+        <td>${verdictTag(c.status)}</td><td>${c.time_ms} ms</td></tr>`).join('')}</tbody></table>` : ''}
+  `;
+}
+
+const SAMPLES = {
+  '1000': `#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    long long a, b;\n    cin >> a >> b;\n    cout << a + b << endl;\n    return 0;\n}\n`,
+  '1001': `#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int n;\n    if (!(cin >> n)) return 0;\n    double s = 0, x;\n    for (int i = 0; i < n; i++) { cin >> x; s += x; }\n    printf("%.6f\\n", s);\n    return 0;\n}\n`,
+  '1002': `#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int n; cin >> n;\n    vector<long long> a(n);\n    for (auto &x : a) cin >> x;\n    long long best = LLONG_MIN, cur = 0, l = 0, bl = 0, br = 0;\n    for (int i = 0; i < n; i++) {\n        if (cur <= 0) { cur = a[i]; l = i; } else cur += a[i];\n        if (cur > best) { best = cur; bl = l; br = i; }\n    }\n    cout << best << " " << bl + 1 << " " << br + 1 << endl;\n    return 0;\n}\n`
+};
+
+function fillSample() {
+  if (!state.current) return;
+  document.getElementById('code').value = SAMPLES[state.current.id] || '';
+}
+
+function setHint(t) { document.getElementById('submitHint').textContent = t; }
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+document.getElementById('btnSubmit').onclick = submit;
+document.getElementById('btnSample').onclick = fillSample;
+
+(async function init() {
+  await loadLanguages();
+  await loadProblems();
+})();
+</script>
+
+</body>
+</html>
